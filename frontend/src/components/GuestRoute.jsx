@@ -8,8 +8,8 @@ export const GuestRoute = ({ children }) => {
 
   if (isAuthenticated && user) {
     if (user.role === 'teacher') return <Navigate to="/teacher/dashboard" replace />;
-    if (user.role === 'admin')   return <Navigate to="/admin/dashboard" replace />;
     return <Navigate to="/student/dashboard" replace />;
+
   }
 
   return <>{children}</>;

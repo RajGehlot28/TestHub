@@ -1,7 +1,8 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
-import { BrainCircuit, LogOut, Building2, PlusCircle, ShieldAlert } from 'lucide-react';
+import { BrainCircuit, LogOut, Building2, PlusCircle } from 'lucide-react';
+
 
 export const Navbar = () => {
   const { user, logout, isAuthenticated } = useAuth();
@@ -21,7 +22,6 @@ export const Navbar = () => {
             to={
               isAuthenticated && user
                 ? user.role === 'teacher' ? '/teacher/dashboard'
-                : user.role === 'admin'   ? '/admin/dashboard'
                 : '/student/dashboard'
                 : '/'
             }
@@ -51,15 +51,6 @@ export const Navbar = () => {
                 </>
               )}
 
-              {user.role === 'admin' && (
-                <Link
-                  to="/admin/dashboard"
-                  className="flex items-center gap-1.5 text-sm font-medium text-amber-700 hover:text-amber-800 transition-colors"
-                >
-                  <ShieldAlert className="w-4 h-4 text-amber-600" />
-                  Admin Panel
-                </Link>
-              )}
 
               {/* Institute Badge */}
               <div className="hidden md:flex items-center gap-1.5 px-3 py-1 rounded-md bg-slate-100 border border-slate-200 text-xs text-slate-700 font-medium">

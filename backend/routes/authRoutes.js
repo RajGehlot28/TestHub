@@ -292,27 +292,8 @@ router.post('/teacher/login', async (req, res) => {
   }
 });
 
-// --- ADMIN LOGIN ---
-router.post('/admin/login', async (req, res) => {
-  try {
-    const { email, password } = req.body;
-    if (email === 'admin@testhub.com' && (password === 'admin123' || password === 'admin')) {
-      const token = jwt.sign(
-        { id: 'admin_root', email, fullName: 'Platform Admin', role: 'admin' },
-        JWT_SECRET,
-        { expiresIn: '24h' }
-      );
-      return res.json({
-        message: 'Admin authentication successful',
-        token,
-        user: { id: 'admin_root', email, fullName: 'Platform Admin', role: 'admin' }
-      });
-    }
-    return res.status(401).json({ message: 'Invalid admin credentials' });
-  } catch (error) {
-    res.status(500).json({ message: 'Server error' });
-  }
-});
+
+
 
 // --- GET PUBLIC LIST OF INSTITUTES FOR DROPDOWN ---
 router.get('/institutes', async (req, res) => {

@@ -92,8 +92,6 @@ export const LandingPage = () => {
             <span className="font-bold text-slate-700">TestHub Platform</span> &copy; 2026. All rights reserved.
           </div>
           <div className="flex items-center gap-4">
-            <Link to="/login-admin" className="text-slate-600 hover:text-amber-600 transition-colors">Admin Login</Link>
-            <span>&bull;</span>
             <Link to="/login-teacher" className="hover:text-indigo-600 transition-colors">Teacher Portal</Link>
             <span>&bull;</span>
             <Link to="/login-student" className="hover:text-indigo-600 transition-colors">Student Portal</Link>
