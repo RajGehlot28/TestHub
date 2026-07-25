@@ -46,8 +46,6 @@ app.get('/api/health', (req, res) => {
 
 // Start Server
 app.listen(PORT, () => {
-  console.log(`\n==================================================`);
   console.log(`TestHub Backend Server active on port ${PORT}`);
   console.log(`API Endpoint: http://localhost:${PORT}/api/health`);
-  console.log(`==================================================\n`);
 });
