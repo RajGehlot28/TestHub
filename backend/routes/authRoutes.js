@@ -229,14 +229,19 @@ router.post('/teacher/login', async (req, res) => {
     let teacher = null;
     let isStudentAccount = false;
 
-    if (getIsConnected()) {
+    const dbConnected = getIsConnected();
+    console.log(`[TEACHER LOGIN] email: ${email} | DB connected: ${dbConnected}`);
+
+    if (dbConnected) {
       teacher = await Teacher.findOne({ email: email.toLowerCase() });
+      console.log(`[TEACHER LOGIN] Teacher found in DB: ${teacher ? 'YES' : 'NO'}`);
       if (!teacher) {
         const studentExist = await Student.findOne({ email: email.toLowerCase() });
         if (studentExist) isStudentAccount = true;
       }
     } else {
       teacher = memoryStore.teachers.find(t => t.email.toLowerCase() === email.toLowerCase());
+      console.log(`[TEACHER LOGIN] Teacher found in memoryStore: ${teacher ? 'YES' : 'NO'}`);
       if (!teacher) {
         isStudentAccount = memoryStore.students.some(s => s.email.toLowerCase() === email.toLowerCase());
       }
@@ -247,10 +252,12 @@ router.post('/teacher/login', async (req, res) => {
     }
 
     if (!teacher) {
+      console.log(`[TEACHER LOGIN] FAILED - teacher not found for: ${email}`);
       return res.status(401).json({ message: 'Invalid teacher credentials. Note: Teacher accounts are created by Admin.' });
     }
 
     const isMatch = await bcrypt.compare(password, teacher.passwordHash);
+    console.log(`[TEACHER LOGIN] Password match: ${isMatch}`);
     if (!isMatch) {
       return res.status(401).json({ message: 'Invalid teacher credentials.' });
     }
