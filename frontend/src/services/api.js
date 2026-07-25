@@ -1,6 +1,14 @@
 import axios from 'axios';
 
-const API_BASE = '/api';
+const getBaseURL = () => {
+  const envUrl = import.meta.env.VITE_API_URL;
+  if (envUrl) {
+    return envUrl.endsWith('/api') ? envUrl : `${envUrl.replace(/\/$/, '')}/api`;
+  }
+  return 'https://testhub-ypdl.onrender.com/api';
+};
+
+const API_BASE = getBaseURL();
 
 const api = axios.create({
   baseURL: API_BASE,
