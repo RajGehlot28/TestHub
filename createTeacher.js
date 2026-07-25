@@ -45,21 +45,15 @@ const rl = readline.createInterface({
 const askQuestion = (query) => new Promise(resolve => rl.question(query, resolve));
 
 async function main() {
-  console.log('\n==================================================');
-  console.log('TestHub CLI - Interactive Teacher Creation Tool');
-  console.log('==================================================\n');
-
   const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/testhub';
   
   let isDbConnected = false;
   try {
     await mongoose.connect(mongoUri, { serverSelectionTimeoutMS: 2500 });
     isDbConnected = true;
-    console.log(`[DB] Connected to MongoDB at ${mongoUri}\n`);
+    console.log(`Connected to MongoDB at ${mongoUri}\n`);
   } catch (err) {
-    console.log(`[DB Notice] Local MongoDB service is offline or unreachable.`);
-    console.log(`[DB Notice] Note: The TestHub web backend server (npm start in /backend) runs an in-memory database automatically when MongoDB is offline.`);
-    console.log(`[DB Notice] We will create your teacher account in MongoDB if online, or output full credentials & JSON payload for server usage.\n`);
+    console.log(`Local MongoDB service is offline or unreachable.`);
   }
 
   // Fetch existing institutes if DB connected
@@ -73,7 +67,7 @@ async function main() {
   // 1. Full Name
   let fullName = '';
   while (!fullName.trim()) {
-    fullName = await askQuestion('Enter Teacher Full Name (e.g. Dr. Alan Turing): ');
+    fullName = await askQuestion('Enter Teacher Full Name (e.g. Dr. Raj Gehlot): ');
   }
 
   // 2. Email Address
@@ -104,8 +98,8 @@ async function main() {
   }
 
   // 3. Password
-  let password = await askQuestion('Enter Password (default: teacher123): ');
-  if (!password.trim()) password = 'teacher123';
+  let rawPassword = await askQuestion('Enter Password (default: teacher123): ');
+  let password = rawPassword.trim() || 'teacher123';
 
   // 4. Institute Assignment (Optional)
   console.log('\nInstitute Association (Optional):');
@@ -170,24 +164,18 @@ async function main() {
 
   if (isDbConnected) {
     const createdTeacher = await Teacher.create(newTeacherObj);
-    console.log('\n==================================================');
     console.log('SUCCESS: Teacher Account Created in MongoDB Database!');
-    console.log('==================================================');
     console.log(`Teacher ID    : ${createdTeacher._id}`);
     console.log(`Full Name     : ${createdTeacher.fullName}`);
     console.log(`Email        : ${createdTeacher.email}`);
     console.log(`Password     : ${password}`);
     console.log(`Institute     : ${createdTeacher.instituteName || 'None (Independent Teacher)'}`);
-    console.log('==================================================\n');
   } else {
-    console.log('\n==================================================');
     console.log('SUCCESS: Teacher Account Credentials Prepared!');
-    console.log('==================================================');
     console.log(`Full Name  : ${newTeacherObj.fullName}`);
     console.log(`Email     : ${newTeacherObj.email}`);
     console.log(`Password  : ${password}`);
     console.log(`Institute  : ${newTeacherObj.instituteName || 'None (Independent Teacher)'}`);
-    console.log('==================================================\n');
   }
 
   console.log('Next Step: You can now log into the web application as this teacher at:');

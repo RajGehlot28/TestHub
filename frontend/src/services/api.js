@@ -5,6 +5,10 @@ const getBaseURL = () => {
   if (envUrl) {
     return envUrl.endsWith('/api') ? envUrl : `${envUrl.replace(/\/$/, '')}/api`;
   }
+  // When running locally in browser (localhost / 127.0.0.1)
+  if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+    return 'http://localhost:5000/api';
+  }
   return 'https://testhub-ypdl.onrender.com/api';
 };
 
