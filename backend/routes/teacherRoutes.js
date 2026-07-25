@@ -48,8 +48,8 @@ router.get('/dashboard', async (req, res) => {
     });
 
     const totalStudentsEvaluated = results.length;
-    const overallAverage = performanceTrends.length > 0
-      ? Math.round(performanceTrends.reduce((acc, curr) => acc + curr.averagePercentage, 0) / performanceTrends.length)
+    const overallAverage = results.length > 0
+      ? Math.round(results.reduce((acc, curr) => acc + curr.percentage, 0) / results.length)
       : 0;
 
     // Build full test summaries including computed student stats

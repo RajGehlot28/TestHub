@@ -1,35 +1,24 @@
 import axios from 'axios';
 
-const getBaseURL = () => {
-  const envUrl = import.meta.env.VITE_API_URL;
-  if (envUrl) {
-    return envUrl.endsWith('/api') ? envUrl : `${envUrl.replace(/\/$/, '')}/api`;
-  }
-  // When running locally in browser (localhost / 127.0.0.1)
-  if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
-    return 'http://localhost:5000/api';
-  }
-  return 'https://testhub-ypdl.onrender.com/api';
-};
-
-const API_BASE = getBaseURL();
+// DEV  (npm run dev) → '/api' → Vite proxy → http://localhost:5000
+// PROD (npm run build + deploy) → Render backend
+const API_BASE = import.meta.env.DEV
+  ? '/api'
+  : 'https://testhub-ypdl.onrender.com/api';
 
 const api = axios.create({
   baseURL: API_BASE,
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  headers: { 'Content-Type': 'application/json' },
 });
 
-// Interceptor to inject Bearer token
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('testhub_token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-}, (error) => {
-  return Promise.reject(error);
-});
+// Attach Bearer token on every request
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('testhub_token');
+    if (token) config.headers.Authorization = `Bearer ${token}`;
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
 
 export default api;
