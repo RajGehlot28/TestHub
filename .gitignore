@@ -1,15 +1,14 @@
 # Dependencies
 node_modules/
-backend/node_modules/
-frontend/node_modules/
 
 # Environment Variables & Secrets
 .env
-backend/.env
+.env.*
+*.env
 
 # Production Build Outputs
 dist/
-frontend/dist/
+build/
 
 # Logs
 *.log
