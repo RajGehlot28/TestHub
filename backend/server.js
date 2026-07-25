@@ -41,9 +41,11 @@ app.use('/api/ai', aiRoutes);
 
 // Health Check
 app.get('/api/health', (req, res) => {
+  const { getDbDiagnostics } = require('./config/db');
   res.json({
     status: 'online',
     service: 'TestHub SaaS Engine',
+    db: getDbDiagnostics(),
     timestamp: new Date()
   });
 });
