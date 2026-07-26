@@ -14,7 +14,6 @@ router.post('/student/register', async (req, res) => {
   try {
     const { email, name, rollNo, password, instituteId, instituteName } = req.body;
 
-    console.log('[REGISTER] Request body:', { email, name, rollNo, instituteName, instituteId });
 
     if (!email || !name || !rollNo || !password) {
       return res.status(400).json({ message: 'All required fields (Email, Name, Roll No, Password) must be provided.' });
@@ -24,13 +23,11 @@ router.post('/student/register', async (req, res) => {
     let finalInstName = (instituteName && instituteName.trim()) ? instituteName.trim() : null;
     let finalInstId = instituteId || null;
 
-    console.log('[REGISTER] Initial finalInstName:', finalInstName, 'finalInstId:', finalInstId);
 
     if (finalInstName) {
       try {
         const escapedName = finalInstName.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
         const safeRegex = new RegExp(`^${escapedName}$`, 'i');
-        console.log('[REGISTER] DB connected:', getIsConnected());
 
         if (getIsConnected()) {
           let instObj = null;
@@ -38,12 +35,10 @@ router.post('/student/register', async (req, res) => {
             instObj = await Institute.findById(instituteId);
           } else {
             instObj = await Institute.findOne({ instituteName: { $regex: safeRegex } });
-            console.log('[REGISTER] Found existing institute:', instObj ? instObj.instituteName : 'None');
             if (!instObj) {
               try {
                 const code = finalInstName.substring(0, 4).toUpperCase() + Math.floor(1000 + Math.random() * 9000);
                 instObj = await Institute.create({ instituteName: finalInstName, code, city: 'Main Campus' });
-                console.log('[REGISTER] Created new institute:', instObj.instituteName);
               } catch (createErr) {
                 console.error('[REGISTER] Institute create failed, trying findOne:', createErr.message);
                 instObj = await Institute.findOne({ instituteName: { $regex: safeRegex } });
@@ -68,7 +63,6 @@ router.post('/student/register', async (req, res) => {
       }
     }
 
-    console.log('[REGISTER] After institute resolution — finalInstName:', finalInstName, 'finalInstId:', finalInstId);
 
     // Step 2: Check teacher collision + find existing student
     let existingStudent = null;
@@ -91,7 +85,6 @@ router.post('/student/register', async (req, res) => {
     const passwordHash = await bcrypt.hash(password, salt);
 
     if (existingStudent) {
-      console.log('[REGISTER] Updating EXISTING student with instituteName:', finalInstName);
       if (getIsConnected()) {
         existingStudent.set({ name, rollNo, passwordHash, instituteId: finalInstId, instituteName: finalInstName });
         student = await existingStudent.save();
@@ -107,7 +100,6 @@ router.post('/student/register', async (req, res) => {
         student = existingStudent;
       }
     } else {
-      console.log('[REGISTER] Creating NEW student with instituteName:', finalInstName);
       const newStudentData = {
         email: email.toLowerCase(), name, rollNo, passwordHash,
         instituteId: finalInstId, instituteName: finalInstName,
@@ -120,8 +112,6 @@ router.post('/student/register', async (req, res) => {
         memoryStore.students.push(student);
       }
     }
-
-    console.log('[REGISTER] student.instituteName after save:', student.instituteName);
 
     const token = jwt.sign(
       {
@@ -137,7 +127,6 @@ router.post('/student/register', async (req, res) => {
     );
 
     const responseInstName = student.instituteName || finalInstName || null;
-    console.log('[REGISTER] Response instituteName:', responseInstName);
 
     res.status(201).json({
       message: 'Student registered successfully!',
@@ -230,18 +219,15 @@ router.post('/teacher/login', async (req, res) => {
     let isStudentAccount = false;
 
     const dbConnected = getIsConnected();
-    console.log(`[TEACHER LOGIN] email: ${email} | DB connected: ${dbConnected}`);
 
     if (dbConnected) {
       teacher = await Teacher.findOne({ email: email.toLowerCase() });
-      console.log(`[TEACHER LOGIN] Teacher found in DB: ${teacher ? 'YES' : 'NO'}`);
       if (!teacher) {
         const studentExist = await Student.findOne({ email: email.toLowerCase() });
         if (studentExist) isStudentAccount = true;
       }
     } else {
       teacher = memoryStore.teachers.find(t => t.email.toLowerCase() === email.toLowerCase());
-      console.log(`[TEACHER LOGIN] Teacher found in memoryStore: ${teacher ? 'YES' : 'NO'}`);
       if (!teacher) {
         isStudentAccount = memoryStore.students.some(s => s.email.toLowerCase() === email.toLowerCase());
       }
@@ -252,12 +238,10 @@ router.post('/teacher/login', async (req, res) => {
     }
 
     if (!teacher) {
-      console.log(`[TEACHER LOGIN] FAILED - teacher not found for: ${email}`);
       return res.status(401).json({ message: 'Invalid teacher credentials. Note: Teacher accounts are created by Admin.' });
     }
 
     const isMatch = await bcrypt.compare(password, teacher.passwordHash);
-    console.log(`[TEACHER LOGIN] Password match: ${isMatch}`);
     if (!isMatch) {
       return res.status(401).json({ message: 'Invalid teacher credentials.' });
     }

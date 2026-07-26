@@ -285,7 +285,6 @@ router.get('/tests/:testId/results', async (req, res) => {
       submissions
     });
   } catch (error) {
-    console.error('Error fetching test results:', error);
     res.status(500).json({ message: 'Error fetching test results', error: error.message });
   }
 });

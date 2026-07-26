@@ -3,17 +3,30 @@ const mongoose = require('mongoose');
 let isConnected = false;
 let dbError = null;
 
-mongoose.set("debug", true);
-
 const connectDB = async () => {
   try {
-    const conn = await mongoose.connect(process.env.MONGODB_URI, {
+    dbError = null;
+    let uri = process.env.MONGODB_URI;
+
+    if (!uri) {
+      dbError = 'MONGODB_URI is not set. Running with in-memory store.';
+      console.warn(dbError);
+      return;
+    }
+
+    uri = uri.trim().replace(/^["']|["']$/g, '');
+
+    const conn = await mongoose.connect(uri, {
       serverSelectionTimeoutMS: 10000,
-      family: 4
+      family: 4,
     });
-    console.log("Connected:", conn.connection.host);
-  } catch (err) {
-    console.error(err);
+
+    isConnected = true;
+    console.log(`MongoDB connected: ${conn.connection.host}`);
+  } catch (error) {
+    dbError = error.message;
+    isConnected = false;
+    console.error(`MongoDB connection failed: ${error.message}`);
   }
 };
 
@@ -21,8 +34,7 @@ const getIsConnected = () => isConnected;
 const getDbDiagnostics = () => ({
   isConnected,
   hasMongoUri: !!process.env.MONGODB_URI,
-  mongoUriLength: process.env.MONGODB_URI ? process.env.MONGODB_URI.length : 0,
-  dbError
+  dbError,
 });
 
 module.exports = { connectDB, getIsConnected, getDbDiagnostics };
