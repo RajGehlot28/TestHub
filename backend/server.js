@@ -51,7 +51,6 @@ async function startServer() {
   await connectDB();
   app.listen(PORT, () => {
     console.log(`TestHub Backend Server active on port ${PORT}`);
-    console.log(`API Endpoint: http://localhost:${PORT}/api/health`);
   });
 }
 startServer();
