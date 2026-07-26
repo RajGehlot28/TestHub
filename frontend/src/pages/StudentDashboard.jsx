@@ -178,15 +178,7 @@ export const StudentDashboard = () => {
                       {new Date(r.submittedAt || r.createdAt).toLocaleDateString()}
                     </td>
                     <td className="py-3.5 px-4 font-bold text-slate-900">{r.totalMarksObtained} / {r.maxMarks}</td>
-                    <td className="py-3.5 px-4">
-                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold text-white ${
-                        r.percentage >= 75 ? 'bg-emerald-500' :
-                        r.percentage >= 50 ? 'bg-indigo-500' :
-                        'bg-rose-500'
-                      }`}>
-                        {r.percentage}%
-                      </span>
-                    </td>
+                    <td className="py-3.5 px-4 font-extrabold text-slate-900">{r.percentage}%</td>
                     <td className="py-3.5 px-4 text-slate-600">{r.instituteName || 'Open Assessment'}</td>
                     <td className="py-3.5 px-4 text-right">
                       <button
