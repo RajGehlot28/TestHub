@@ -293,7 +293,7 @@ export const CreateTestWizard = () => {
             className="w-full py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-sm flex items-center justify-center gap-2 transition-all"
           >
             <Sparkles className="w-5 h-5" />
-            <span>Generate MCQs with OpenAI</span>
+            <span>Generate MCQs with AI</span>
           </button>
         </form>
       )}
