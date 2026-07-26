@@ -13,9 +13,6 @@ const aiRoutes = require('./routes/aiRoutes');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Connect Database
-connectDB();
-
 // Middleware
 app.use(cors({
   origin: true, // Allow all origins (frontend can be on Vercel, Netlify, etc.)
@@ -50,8 +47,11 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Start Server
-app.listen(PORT, () => {
-  console.log(`TestHub Backend Server active on port ${PORT}`);
-  console.log(`API Endpoint: http://localhost:${PORT}/api/health`);
-});
+async function startServer() {
+  await connectDB();
+  app.listen(PORT, () => {
+    console.log(`TestHub Backend Server active on port ${PORT}`);
+    console.log(`API Endpoint: http://localhost:${PORT}/api/health`);
+  });
+}
+startServer();
