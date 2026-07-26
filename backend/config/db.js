@@ -7,6 +7,11 @@ const connectDB = async () => {
   try {
     dbError = null;
     let uri = process.env.MONGODB_URI;
+    console.log({
+      hasUri: !!process.env.MONGODB_URI,
+      length: process.env.MONGODB_URI?.length,
+      prefix: process.env.MONGODB_URI?.substring(0, 30)
+    });
     if (!uri) {
       dbError = 'process.env.MONGODB_URI is undefined or empty on server';
       console.warn(`${dbError}. Running with in-memory store.`);
