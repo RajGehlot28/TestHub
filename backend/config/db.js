@@ -11,13 +11,9 @@ const connectDB = async () => {
       serverSelectionTimeoutMS: 10000,
       family: 4
     });
-    console.log(process.env.MONGODB_URI);
-
     console.log("Connected:", conn.connection.host);
   } catch (err) {
     console.error(err);
-    console.error("Reason:", err.reason);
-    console.error("Cause:", err.cause);
   }
 };
 
