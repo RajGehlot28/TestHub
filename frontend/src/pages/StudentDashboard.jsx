@@ -179,10 +179,10 @@ export const StudentDashboard = () => {
                     </td>
                     <td className="py-3.5 px-4 font-bold text-slate-900">{r.totalMarksObtained} / {r.maxMarks}</td>
                     <td className="py-3.5 px-4">
-                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
-                        r.percentage >= 75 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
-                        r.percentage >= 50 ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' :
-                        'bg-rose-50 text-rose-700 border border-rose-200'
+                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold text-white ${
+                        r.percentage >= 75 ? 'bg-emerald-500' :
+                        r.percentage >= 50 ? 'bg-indigo-500' :
+                        'bg-rose-500'
                       }`}>
                         {r.percentage}%
                       </span>
