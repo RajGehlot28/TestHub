@@ -17,6 +17,14 @@ const connectDB = async () => {
     // Trim whitespace/quotes that can sneak in via copy-paste on Render
     uri = uri.trim().replace(/^["']|["']$/g, '');
 
+    // Log URI details BEFORE connecting so it appears even on failure
+    console.log('[Database] Attempting connection...', {
+      hasUri: true,
+      length: uri.length,
+      prefix: uri.substring(0, 40),
+      isSRV: uri.startsWith('mongodb+srv://'),
+    });
+
     const conn = await mongoose.connect(uri, {
       authSource: 'admin',
       serverSelectionTimeoutMS: 10000,
@@ -24,12 +32,6 @@ const connectDB = async () => {
     });
     isConnected = true;
     console.log(`[Database] MongoDB Connected: ${conn.connection.host}`);
-    console.log({
-      hasUri: !!process.env.MONGODB_URI,
-      length: process.env.MONGODB_URI?.length,
-      prefix: process.env.MONGODB_URI?.substring(0, 30),
-      isConnected
-    });
   } catch (error) {
     dbError = error.message;
     console.warn(`MongoDB connection failed (${error.message}).`);
