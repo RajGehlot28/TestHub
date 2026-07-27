@@ -30,9 +30,9 @@ async function main() {
 
   const fullName = (await ask('Teacher Full Name: ')).trim();
   const email = (await ask('Teacher Email: ')).trim().toLowerCase();
-  const passwordInput = (await ask('Password (default: teacher123): ')).trim();
+  const passwordInput = (await ask('Password(default: teacher123): ')).trim();
   const password = passwordInput || 'teacher123';
-  const instituteName = (await ask('Institute Name (press ENTER to skip): ')).trim() || null;
+  const instituteName = (await ask('Institute Name(press ENTER to skip): ')).trim() || null;
 
   const existing = await Teacher.findOne({ email });
   if (existing) {

@@ -25,13 +25,14 @@ router.get('/dashboard', async (req, res) => {
       results = await TestResult.find({ testId: { $in: testIds } });
     } else {
       teacherInfo = memoryStore.teachers.find(t => t._id === teacherId || t.email === req.user.email);
-      tests = memoryStore.tests.filter(t => t.teacherId === teacherId || t.teacherId === (teacherInfo ? teacherInfo._id : ''));
+      tests = memoryStore.tests.filter(t => t.teacherId === teacherId || t.teacherId === (teacherInfo ? teacherInfo._id : '')).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
       const testIds = tests.map(t => t._id);
       results = memoryStore.results.filter(r => testIds.includes(r.testId));
     }
 
-    // Performance trends: average score per test
-    const performanceTrends = tests.map(test => {
+    // Performance trends: average score per test chronologically (oldest -> newest, left -> right)
+    const chronologicalTests = [...tests].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+    const performanceTrends = chronologicalTests.map(test => {
       const testRes = results.filter(r => r.testId.toString() === test._id.toString());
       const avgPct = testRes.length > 0
         ? Math.round(testRes.reduce((acc, curr) => acc + curr.percentage, 0) / testRes.length)
