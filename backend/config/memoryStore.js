@@ -5,38 +5,7 @@ const bcrypt = require('bcryptjs');
 const generateId = () => crypto.randomBytes(12).toString('hex');
 
 const memoryStore = {
-  institutes: [
-    {
-      _id: 'inst_1',
-      instituteName: 'Apex Institute of Technology',
-      code: 'APEX01',
-      city: 'Mumbai',
-      state: 'Maharashtra',
-      country: 'India',
-      email: 'contact@apex.edu',
-      phone: '+91 9876543210',
-      adminEmail: 'admin@apex.edu',
-      totalTeachers: 2,
-      totalStudents: 5,
-      isActive: true,
-      createdAt: new Date()
-    },
-    {
-      _id: 'inst_2',
-      instituteName: 'Global Science Academy',
-      code: 'GSA02',
-      city: 'Delhi',
-      state: 'Delhi',
-      country: 'India',
-      email: 'info@gsa.edu',
-      phone: '+91 9811122233',
-      adminEmail: 'admin@gsa.edu',
-      totalTeachers: 1,
-      totalStudents: 3,
-      isActive: true,
-      createdAt: new Date()
-    }
-  ],
+  institutes: [],
   teachers: [
     {
       _id: 'teach_1',

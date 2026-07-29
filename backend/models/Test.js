@@ -10,7 +10,7 @@ const questionSchema = new mongoose.Schema({
       optionText: { type: String, required: true }
     }
   ],
-  correctAnswer: { type: String, required: true }, // 'A', 'B', 'C', or 'D'
+  correctAnswer: { type: String, required: true }, // 'A', 'B', 'C' or 'D'
   marks: { type: Number, default: 1 }
 });
 

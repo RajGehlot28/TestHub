@@ -95,6 +95,8 @@ export const LandingPage = () => {
             <Link to="/login-teacher" className="hover:text-indigo-600 transition-colors">Teacher Portal</Link>
             <span>&bull;</span>
             <Link to="/login-student" className="hover:text-indigo-600 transition-colors">Student Portal</Link>
+            <span>&bull;</span>
+            <Link to="/login-admin" className="px-3 py-1 rounded-md bg-amber-50 text-amber-700 border border-amber-200 font-semibold hover:bg-amber-100 transition-colors">Admin Login</Link>
           </div>
         </div>
       </footer>

@@ -279,6 +279,47 @@ router.post('/teacher/login', async (req, res) => {
 
 
 
+// --- ADMIN LOGIN ---
+router.post('/admin/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    const inputEmail = (email || '').trim().toLowerCase();
+    const inputPassword = (password || '').trim();
+
+    const envAdminEmail = (process.env.ADMIN_EMAIL || 'admin@mail.com').trim().toLowerCase();
+    const envAdminPassword = (process.env.ADMIN_PASSWORD || 'admin@123').trim();
+
+    if (inputEmail !== envAdminEmail || inputPassword !== envAdminPassword) {
+      return res.status(401).json({ message: 'Invalid admin credentials.' });
+    }
+
+    const token = jwt.sign(
+      {
+        id: 'admin_123',
+        email: envAdminEmail,
+        fullName: 'Platform Admin',
+        role: 'admin'
+      },
+      JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+
+    res.json({
+      message: 'Admin login successful',
+      token: token,
+      user: {
+        id: 'admin_123',
+        email: envAdminEmail,
+        fullName: 'Platform Admin',
+        role: 'admin'
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error during admin login' });
+  }
+});
+
 // --- GET PUBLIC LIST OF INSTITUTES FOR DROPDOWN ---
 router.get('/institutes', async (req, res) => {
   try {

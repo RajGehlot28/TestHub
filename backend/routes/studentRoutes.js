@@ -32,21 +32,40 @@ router.get('/dashboard', async (req, res) => {
       results = memoryStore.results.filter(r => r.studentId === sid).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     }
 
-    const performanceTrends = results.map((r, idx) => ({
-      testName: r.testName || `Test #${results.length - idx}`,
-      percentage: r.percentage,
-      marksObtained: r.totalMarksObtained,
-      maxMarks: r.maxMarks,
-      date: r.submittedAt || r.createdAt
-    })).reverse();
+    // Calculate average score using a simple for loop
+    let totalScore = 0;
+    for (let i = 0; i < results.length; i++) {
+      totalScore = totalScore + results[i].percentage;
+    }
 
-    const avgScore = results.length > 0
-      ? Math.round(results.reduce((a, b) => a + b.percentage, 0) / results.length)
-      : 0;
+    let avgScore = 0;
+    if (results.length > 0) {
+      avgScore = Math.round(totalScore / results.length);
+    }
 
-    const resolvedInstName = (student && student.instituteName && student.instituteName.trim()) 
-      ? student.instituteName.trim() 
-      : (req.user.instituteName && req.user.instituteName.trim() ? req.user.instituteName.trim() : null);
+    // Build performance trends list using a standard for loop
+    let performanceTrends = [];
+    for (let i = results.length - 1; i >= 0; i--) {
+      let r = results[i];
+      let tName = r.testName;
+      if (!tName) {
+        tName = 'Test #' + (results.length - i);
+      }
+      performanceTrends.push({
+        testName: tName,
+        percentage: r.percentage,
+        marksObtained: r.totalMarksObtained,
+        maxMarks: r.maxMarks,
+        date: r.submittedAt || r.createdAt
+      });
+    }
+
+    let resolvedInstName = null;
+    if (student && student.instituteName && student.instituteName.trim()) {
+      resolvedInstName = student.instituteName.trim();
+    } else if (req.user.instituteName && req.user.instituteName.trim()) {
+      resolvedInstName = req.user.instituteName.trim();
+    }
 
     res.json({
       student: {

@@ -9,7 +9,8 @@ import { LandingPage } from './pages/LandingPage.jsx';
 import { LoginStudent } from './pages/LoginStudent.jsx';
 import { RegisterStudent } from './pages/RegisterStudent.jsx';
 import { LoginTeacher } from './pages/LoginTeacher.jsx';
-
+import { LoginAdmin } from './pages/LoginAdmin.jsx';
+import { AdminDashboard } from './pages/AdminDashboard.jsx';
 
 import { TeacherDashboard } from './pages/TeacherDashboard.jsx';
 import { CreateTestWizard } from './pages/CreateTestWizard.jsx';
@@ -18,8 +19,6 @@ import { TeacherTestResults } from './pages/TeacherTestResults.jsx';
 import { StudentDashboard } from './pages/StudentDashboard.jsx';
 import { StudentTestRunner } from './pages/StudentTestRunner.jsx';
 import { StudentTestResultView } from './pages/StudentTestResultView.jsx';
-
-
 
 export function App() {
   return (
@@ -34,7 +33,17 @@ export function App() {
               <Route path="/login-student" element={<GuestRoute><LoginStudent /></GuestRoute>} />
               <Route path="/register-student" element={<GuestRoute><RegisterStudent /></GuestRoute>} />
               <Route path="/login-teacher" element={<GuestRoute><LoginTeacher /></GuestRoute>} />
+              <Route path="/login-admin" element={<GuestRoute><LoginAdmin /></GuestRoute>} />
 
+              {/* Admin Protected Route */}
+              <Route
+                path="/admin/dashboard"
+                element={
+                  <ProtectedRoute allowedRoles={['admin']}>
+                    <AdminDashboard />
+                  </ProtectedRoute>
+                }
+              />
 
               {/* Teacher Protected Routes */}
               <Route

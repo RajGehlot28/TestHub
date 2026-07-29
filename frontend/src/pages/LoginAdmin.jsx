@@ -5,8 +5,8 @@ import api from '../services/api.js';
 import { ShieldAlert, Mail, ArrowRight, AlertCircle, Eye, EyeOff } from 'lucide-react';
 
 export const LoginAdmin = () => {
-  const [email, setEmail] = useState('admin@testhub.com');
-  const [password, setPassword] = useState('admin123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -57,7 +57,7 @@ export const LoginAdmin = () => {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@testhub.com"
+                placeholder="admin@mail.com"
                 className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-sm placeholder-slate-400 focus:outline-none focus:border-amber-600 transition-colors"
               />
             </div>
@@ -71,7 +71,7 @@ export const LoginAdmin = () => {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
+                placeholder="admin@123"
                 className="w-full pl-4 pr-10 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-sm placeholder-slate-400 focus:outline-none focus:border-amber-600 transition-colors"
               />
               <button
@@ -94,12 +94,6 @@ export const LoginAdmin = () => {
             <ArrowRight className="w-4 h-4" />
           </button>
         </form>
-
-        <div className="mt-6 pt-4 border-t border-slate-200 text-xs text-slate-600 bg-slate-50 p-3 rounded-xl">
-          <span className="font-semibold text-amber-700 block mb-1">Default Admin Credentials:</span>
-          <div>Email: <code className="text-slate-800 font-mono">admin@testhub.com</code></div>
-          <div>Password: <code className="text-slate-800 font-mono">admin123</code></div>
-        </div>
       </div>
     </div>
   );

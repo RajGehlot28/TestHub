@@ -21,7 +21,8 @@ export const Navbar = () => {
           <Link
             to={
               isAuthenticated && user
-                ? user.role === 'teacher' ? '/teacher/dashboard'
+                ? user.role === 'admin' ? '/admin/dashboard'
+                : user.role === 'teacher' ? '/teacher/dashboard'
                 : '/student/dashboard'
                 : '/'
             }
@@ -52,11 +53,13 @@ export const Navbar = () => {
               )}
 
 
-              {/* Institute Badge */}
-              <div className="hidden md:flex items-center gap-1.5 px-3 py-1 rounded-md bg-slate-100 border border-slate-200 text-xs text-slate-700 font-medium">
-                <Building2 className="w-3.5 h-3.5 text-indigo-600" />
-                <span>{user.instituteName || 'No Institute Assigned'}</span>
-              </div>
+              {/* Institute Badge (Students & Teachers only) */}
+              {user.role !== 'admin' && (
+                <div className="hidden md:flex items-center gap-1.5 px-3 py-1 rounded-md bg-slate-100 border border-slate-200 text-xs text-slate-700 font-medium">
+                  <Building2 className="w-3.5 h-3.5 text-indigo-600" />
+                  <span>{user.instituteName || 'No Institute Assigned'}</span>
+                </div>
+              )}
 
               {/* User Profile */}
               <div className="flex items-center gap-3 pl-2 border-l border-slate-200">
@@ -89,6 +92,12 @@ export const Navbar = () => {
                 className="text-xs font-semibold px-3 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
               >
                 Teacher Portal
+              </Link>
+              <Link
+                to="/login-admin"
+                className="text-xs font-semibold text-amber-700 hover:text-amber-800 bg-amber-50 border border-amber-200 px-3 py-2 rounded-lg hover:bg-amber-100 transition-colors"
+              >
+                Admin Portal
               </Link>
             </div>
           )}

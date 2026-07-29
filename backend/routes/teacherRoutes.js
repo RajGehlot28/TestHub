@@ -30,36 +30,79 @@ router.get('/dashboard', async (req, res) => {
       results = memoryStore.results.filter(r => testIds.includes(r.testId));
     }
 
-    // Performance trends: average score per test chronologically (oldest -> newest, left -> right)
-    const chronologicalTests = [...tests].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
-    const performanceTrends = chronologicalTests.map(test => {
-      const testRes = results.filter(r => r.testId.toString() === test._id.toString());
-      const avgPct = testRes.length > 0
-        ? Math.round(testRes.reduce((acc, curr) => acc + curr.percentage, 0) / testRes.length)
-        : 0;
+    // Copy tests array and sort chronologically (oldest to newest) using simple sort function
+    let chronologicalTests = [];
+    for (let i = 0; i < tests.length; i++) {
+      chronologicalTests.push(tests[i]);
+    }
+    chronologicalTests.sort(function (a, b) {
+      let dateA = new Date(a.createdAt);
+      let dateB = new Date(b.createdAt);
+      return dateA - dateB;
+    });
 
-      return {
+    let performanceTrends = [];
+    for (let i = 0; i < chronologicalTests.length; i++) {
+      let test = chronologicalTests[i];
+      let testRes = [];
+      for (let j = 0; j < results.length; j++) {
+        if (results[j].testId.toString() === test._id.toString()) {
+          testRes.push(results[j]);
+        }
+      }
+
+      let totalPct = 0;
+      for (let k = 0; k < testRes.length; k++) {
+        totalPct = totalPct + testRes[k].percentage;
+      }
+
+      let avgPct = 0;
+      if (testRes.length > 0) {
+        avgPct = Math.round(totalPct / testRes.length);
+      }
+
+      performanceTrends.push({
         testId: test._id,
         testName: test.testName,
         testCode: test.testCode,
         totalStudentsTaken: testRes.length,
         averagePercentage: avgPct,
         date: test.createdAt
-      };
-    });
+      });
+    }
 
     const totalStudentsEvaluated = results.length;
-    const overallAverage = results.length > 0
-      ? Math.round(results.reduce((acc, curr) => acc + curr.percentage, 0) / results.length)
-      : 0;
+    let overallSum = 0;
+    for (let i = 0; i < results.length; i++) {
+      overallSum = overallSum + results[i].percentage;
+    }
+    let overallAverage = 0;
+    if (results.length > 0) {
+      overallAverage = Math.round(overallSum / results.length);
+    }
 
     // Build full test summaries including computed student stats
-    const recentTests = tests.map(test => {
-      const testRes = results.filter(r => r.testId.toString() === test._id.toString());
-      const avgPct = testRes.length > 0
-        ? Math.round(testRes.reduce((acc, curr) => acc + curr.percentage, 0) / testRes.length)
-        : 0;
-      return {
+    let recentTests = [];
+    for (let i = 0; i < tests.length; i++) {
+      let test = tests[i];
+      let testRes = [];
+      for (let j = 0; j < results.length; j++) {
+        if (results[j].testId.toString() === test._id.toString()) {
+          testRes.push(results[j]);
+        }
+      }
+
+      let totalPct = 0;
+      for (let k = 0; k < testRes.length; k++) {
+        totalPct = totalPct + testRes[k].percentage;
+      }
+
+      let avgPct = 0;
+      if (testRes.length > 0) {
+        avgPct = Math.round(totalPct / testRes.length);
+      }
+
+      recentTests.push({
         _id: test._id,
         testCode: test.testCode,
         testName: test.testName,
@@ -73,8 +116,8 @@ router.get('/dashboard', async (req, res) => {
         averagePercentage: avgPct,
         status: test.status,
         createdAt: test.createdAt
-      };
-    });
+      });
+    }
 
     res.json({
       teacher: {
@@ -93,51 +136,6 @@ router.get('/dashboard', async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ message: 'Error loading teacher dashboard data', error: error.message });
-  }
-});
-
-// --- GET ALL TESTS CREATED BY TEACHER ---
-router.get('/tests', async (req, res) => {
-  try {
-    const teacherId = req.user.id;
-    let tests = [];
-    let results = [];
-
-    if (getIsConnected()) {
-      tests = await Test.find({ teacherId }).sort({ createdAt: -1 });
-      const testIds = tests.map(t => t._id);
-      results = await TestResult.find({ testId: { $in: testIds } });
-    } else {
-      const teacherInfo = memoryStore.teachers.find(t => t._id === teacherId || t.email === req.user.email);
-      const tid = teacherInfo ? teacherInfo._id : teacherId;
-      tests = memoryStore.tests.filter(t => t.teacherId === tid);
-      const testIds = tests.map(t => t._id);
-      results = memoryStore.results.filter(r => testIds.includes(r.testId));
-    }
-
-    const testSummaries = tests.map(t => {
-      const tRes = results.filter(r => r.testId.toString() === t._id.toString());
-      const avg = tRes.length > 0 ? Math.round(tRes.reduce((a, b) => a + b.percentage, 0) / tRes.length) : 0;
-      return {
-        _id: t._id,
-        testCode: t.testCode,
-        testName: t.testName,
-        totalQuestions: t.totalQuestions,
-        maxMarks: t.maxMarks,
-        duration: t.duration,
-        startTime: t.startTime,
-        endTime: t.endTime,
-        instituteName: t.instituteName,
-        totalStudentsTaken: tRes.length,
-        averagePercentage: avg,
-        status: t.status,
-        createdAt: t.createdAt
-      };
-    });
-
-    res.json(testSummaries);
-  } catch (error) {
-    res.status(500).json({ message: 'Error fetching teacher tests' });
   }
 });
 
@@ -161,7 +159,12 @@ router.post('/tests', async (req, res) => {
 
     const testCode = 'TH-' + crypto.randomBytes(3).toString('hex').toUpperCase();
     const marksPerQuestion = questions[0]?.marks || 1;
-    const maxMarks = questions.reduce((acc, q) => acc + (q.marks || 1), 0);
+    
+    let maxMarks = 0;
+    for (let i = 0; i < questions.length; i++) {
+      let q = questions[i];
+      maxMarks = maxMarks + (q.marks || 1);
+    }
 
     const testData = {
       testCode,
@@ -221,9 +224,10 @@ router.get('/tests/:testId/results', async (req, res) => {
     } else {
       test = memoryStore.tests.find(t => t._id === testId || t.testCode === testId);
       if (test) {
-        results = memoryStore.results
-          .filter(r => r.testId === test._id)
-          .sort((a, b) => b.totalMarksObtained - a.totalMarksObtained);
+        results = memoryStore.results.filter(r => r.testId === test._id);
+        results.sort(function(a, b) {
+          return b.totalMarksObtained - a.totalMarksObtained;
+        });
       }
     }
 
@@ -233,11 +237,29 @@ router.get('/tests/:testId/results', async (req, res) => {
 
     // Build metrics
     const totalSubmissions = results.length;
-    const averageScorePercentage = totalSubmissions > 0
-      ? Math.round(results.reduce((acc, r) => acc + r.percentage, 0) / totalSubmissions)
-      : 0;
-    const highestScore = totalSubmissions > 0 ? Math.max(...results.map(r => r.totalMarksObtained)) : 0;
-    const lowestScore = totalSubmissions > 0 ? Math.min(...results.map(r => r.totalMarksObtained)) : 0;
+    let sumPct = 0;
+    for (let i = 0; i < results.length; i++) {
+      sumPct = sumPct + results[i].percentage;
+    }
+    let averageScorePercentage = 0;
+    if (totalSubmissions > 0) {
+      averageScorePercentage = Math.round(sumPct / totalSubmissions);
+    }
+
+    let highestScore = 0;
+    let lowestScore = 0;
+    if (totalSubmissions > 0) {
+      highestScore = results[0].totalMarksObtained;
+      lowestScore = results[0].totalMarksObtained;
+      for (let i = 1; i < results.length; i++) {
+        if (results[i].totalMarksObtained > highestScore) {
+          highestScore = results[i].totalMarksObtained;
+        }
+        if (results[i].totalMarksObtained < lowestScore) {
+          lowestScore = results[i].totalMarksObtained;
+        }
+      }
+    }
 
     // Map submissions into the expected shape
     const submissions = results.map(r => {

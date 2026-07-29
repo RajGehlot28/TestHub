@@ -91,6 +91,20 @@ router.post('/teachers', async (req, res) => {
       return res.status(400).json({ message: 'Email, Password, and Full Name are required.' });
     }
 
+    const lowerEmail = email.toLowerCase();
+
+    // Check if email already exists
+    let existingTeacher = null;
+    if (getIsConnected()) {
+      existingTeacher = await Teacher.findOne({ email: lowerEmail });
+    } else {
+      existingTeacher = memoryStore.teachers.find(t => t.email.toLowerCase() === lowerEmail);
+    }
+
+    if (existingTeacher) {
+      return res.status(400).json({ message: 'A teacher account with this email already exists.' });
+    }
+
     let instituteObj = null;
     if (instituteId) {
       if (getIsConnected()) {
@@ -104,9 +118,9 @@ router.post('/teachers', async (req, res) => {
     const passwordHash = await bcrypt.hash(password, salt);
 
     const teacherData = {
-      email: email.toLowerCase(),
-      passwordHash,
-      fullName,
+      email: lowerEmail,
+      passwordHash: passwordHash,
+      fullName: fullName,
       instituteId: instituteObj ? instituteObj._id : (instituteId || null),
       instituteName: instituteObj ? instituteObj.instituteName : null,
       createdBy: req.user.email,
@@ -129,7 +143,7 @@ router.post('/teachers', async (req, res) => {
       }
     }
 
-    res.status(201).json({ message: 'Teacher account created successfully', teacher });
+    res.status(201).json({ message: 'Teacher account created successfully', teacher: teacher });
   } catch (error) {
     res.status(500).json({ message: 'Error creating teacher account', error: error.message });
   }
