@@ -50,7 +50,7 @@ export const StudentTestRunner = () => {
       const nextCount = prev + 1;
       if (nextCount >= 3) {
         // Strike 3: Terminate & Submit immediately with current choices
-        alert(`🔴 PROCTORING TERMINATION: Maximum warning limit reached (${nextCount}/3) due to: ${reason}.\nYour assessment is being automatically submitted now.`);
+        alert(`PROCTORING TERMINATION: Maximum warning limit reached (${nextCount}/3) due to: ${reason}.\nYour assessment is being automatically submitted now.`);
         handleSubmitTest();
         return nextCount;
       } else {
@@ -272,7 +272,7 @@ export const StudentTestRunner = () => {
           <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs space-y-1.5 shadow-sm">
             <div className="font-extrabold flex items-center gap-1.5 text-amber-800">
               <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
-              <span>📝 NOTE FOR STUDENTS (IMPORTANT EXAM RULES):</span>
+              <span>NOTE FOR STUDENTS (IMPORTANT EXAM RULES):</span>
             </div>
             <p className="leading-relaxed">
               1. Please do <strong>NOT</strong> press the <strong>Windows key</strong>, <strong>Alt+Tab</strong>, or <strong>Esc key</strong> during the test.
@@ -310,7 +310,7 @@ export const StudentTestRunner = () => {
       <div className="bg-amber-50 border border-amber-200 p-3 rounded-2xl flex flex-wrap items-center justify-between gap-3 text-xs text-amber-900 font-semibold shadow-sm">
         <div className="flex items-center gap-2">
           <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
-          <span>📝 <strong>NOTE:</strong> Do NOT press the Windows key, Alt+Tab, or Esc key during the test. On the 3rd key press or tab switch, your test will end automatically.</span>
+          <span><strong>NOTE:</strong> Do NOT press the Windows key, Alt+Tab, or Esc key during the test. On the 3rd key press or tab switch, your test will end automatically.</span>
         </div>
         <div className="flex items-center gap-1.5 shrink-0 bg-white px-3 py-1 rounded-xl border border-amber-300 shadow-sm text-xs">
           <span className="text-slate-600 font-medium">Warnings Used:</span>
@@ -505,7 +505,7 @@ export const StudentTestRunner = () => {
               <strong className="text-rose-600">Violation Detected:</strong> {latestViolationReason}
             </p>
             <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-800 font-semibold">
-              ⚠️ Warning: You have {3 - warningCount} attempt(s) remaining. On the 3rd violation, your test will be automatically terminated and submitted with your current selected choices.
+              Warning: You have {3 - warningCount} attempt(s) remaining. On the 3rd violation, your test will be automatically terminated and submitted with your current selected choices.
             </div>
             <button
               onClick={handleResumeFromWarning}
