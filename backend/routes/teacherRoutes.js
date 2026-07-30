@@ -119,12 +119,33 @@ router.get('/dashboard', async (req, res) => {
       });
     }
 
+    let resolvedInstName = (teacherInfo && teacherInfo.instituteName) ? teacherInfo.instituteName : req.user.instituteName;
+    let resolvedInstId = (teacherInfo && teacherInfo.instituteId) ? teacherInfo.instituteId : req.user.instituteId;
+
+    if (getIsConnected()) {
+      if (resolvedInstId && !resolvedInstName) {
+        const inst = await Institute.findById(resolvedInstId);
+        if (inst) {
+          resolvedInstName = inst.instituteName;
+          if (teacherInfo) {
+            teacherInfo.instituteName = inst.instituteName;
+            await teacherInfo.save();
+          }
+        }
+      }
+    } else {
+      if (resolvedInstId && !resolvedInstName) {
+        const inst = memoryStore.institutes.find(i => i._id === (resolvedInstId ? resolvedInstId.toString() : ''));
+        if (inst) resolvedInstName = inst.instituteName;
+      }
+    }
+
     res.json({
       teacher: {
-        fullName: req.user.fullName,
-        email: req.user.email,
-        instituteId: teacherInfo ? teacherInfo.instituteId : null,
-        instituteName: teacherInfo ? teacherInfo.instituteName : (req.user.instituteName || 'No Institute (Independent)')
+        fullName: (teacherInfo && teacherInfo.fullName) || req.user.fullName,
+        email: (teacherInfo && teacherInfo.email) || req.user.email,
+        instituteId: resolvedInstId || null,
+        instituteName: resolvedInstName || 'No Institute (Independent)'
       },
       stats: {
         totalTestsCreated: tests.length,
@@ -141,6 +162,7 @@ router.get('/dashboard', async (req, res) => {
 
 // --- CREATE TEST ---
 router.post('/tests', async (req, res) => {
+  const tStart = performance.now();
   try {
     const { testName, description, questions, duration, startTime, endTime, pdfSourceNames } = req.body;
 

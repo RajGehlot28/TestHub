@@ -85,7 +85,7 @@ router.post('/institutes', async (req, res) => {
 // --- CREATE NEW TEACHER (ADMIN CREATES TEACHER) ---
 router.post('/teachers', async (req, res) => {
   try {
-    const { email, password, fullName, instituteId } = req.body;
+    const { email, password, fullName, instituteId, instituteName } = req.body;
 
     if (!email || !password || !fullName) {
       return res.status(400).json({ message: 'Email, Password, and Full Name are required.' });
@@ -106,11 +106,55 @@ router.post('/teachers', async (req, res) => {
     }
 
     let instituteObj = null;
+
     if (instituteId) {
       if (getIsConnected()) {
         instituteObj = await Institute.findById(instituteId);
       } else {
         instituteObj = memoryStore.institutes.find(i => i._id === instituteId);
+      }
+    } else if (instituteName && typeof instituteName === 'string' && instituteName.trim()) {
+      const trimmedName = instituteName.trim();
+      if (getIsConnected()) {
+        instituteObj = await Institute.findOne({ instituteName: new RegExp('^' + trimmedName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$', 'i') });
+        if (!instituteObj) {
+          const code = (trimmedName.replace(/[^a-zA-Z]/g, '').slice(0, 4) || 'INST').toUpperCase() + Math.floor(100 + Math.random() * 900);
+          instituteObj = await Institute.create({
+            instituteName: trimmedName,
+            code,
+            city: '',
+            state: '',
+            country: 'India',
+            email: '',
+            phone: '',
+            adminEmail: req.user.email,
+            totalTeachers: 0,
+            totalStudents: 0,
+            isActive: true,
+            createdAt: new Date()
+          });
+        }
+      } else {
+        instituteObj = memoryStore.institutes.find(i => i.instituteName.toLowerCase() === trimmedName.toLowerCase());
+        if (!instituteObj) {
+          const code = (trimmedName.replace(/[^a-zA-Z]/g, '').slice(0, 4) || 'INST').toUpperCase() + Math.floor(100 + Math.random() * 900);
+          instituteObj = {
+            _id: generateId(),
+            instituteName: trimmedName,
+            code,
+            city: '',
+            state: '',
+            country: 'India',
+            email: '',
+            phone: '',
+            adminEmail: req.user.email,
+            totalTeachers: 0,
+            totalStudents: 0,
+            isActive: true,
+            createdAt: new Date()
+          };
+          memoryStore.institutes.push(instituteObj);
+        }
       }
     }
 
@@ -121,7 +165,7 @@ router.post('/teachers', async (req, res) => {
       email: lowerEmail,
       passwordHash: passwordHash,
       fullName: fullName,
-      instituteId: instituteObj ? instituteObj._id : (instituteId || null),
+      instituteId: instituteObj ? instituteObj._id : null,
       instituteName: instituteObj ? instituteObj.instituteName : null,
       createdBy: req.user.email,
       isActive: true,

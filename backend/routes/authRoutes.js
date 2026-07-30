@@ -246,14 +246,50 @@ router.post('/teacher/login', async (req, res) => {
       return res.status(401).json({ message: 'Invalid teacher credentials.' });
     }
 
+    let resolvedInstName = teacher.instituteName || null;
+    let resolvedInstId = teacher.instituteId ? teacher.instituteId.toString() : null;
+
+    if (dbConnected) {
+      if (resolvedInstId && !resolvedInstName) {
+        const inst = await Institute.findById(resolvedInstId);
+        if (inst) {
+          resolvedInstName = inst.instituteName;
+          // Auto-repair teacher record
+          teacher.instituteName = inst.instituteName;
+          await teacher.save();
+        }
+      } else if (!resolvedInstId && resolvedInstName) {
+        const inst = await Institute.findOne({ instituteName: new RegExp('^' + resolvedInstName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$', 'i') });
+        if (inst) {
+          resolvedInstId = inst._id.toString();
+          teacher.instituteId = inst._id;
+          await teacher.save();
+        }
+      }
+    } else {
+      if (resolvedInstId && !resolvedInstName) {
+        const inst = memoryStore.institutes.find(i => i._id === resolvedInstId);
+        if (inst) {
+          resolvedInstName = inst.instituteName;
+          teacher.instituteName = inst.instituteName;
+        }
+      } else if (!resolvedInstId && resolvedInstName) {
+        const inst = memoryStore.institutes.find(i => i.instituteName.toLowerCase() === resolvedInstName.toLowerCase());
+        if (inst) {
+          resolvedInstId = inst._id;
+          teacher.instituteId = inst._id;
+        }
+      }
+    }
+
     const token = jwt.sign(
       {
         id: teacher._id.toString(),
         email: teacher.email,
         fullName: teacher.fullName,
         role: 'teacher',
-        instituteId: teacher.instituteId ? teacher.instituteId.toString() : null,
-        instituteName: teacher.instituteName || null
+        instituteId: resolvedInstId,
+        instituteName: resolvedInstName
       },
       JWT_SECRET,
       { expiresIn: '24h' }
@@ -267,8 +303,8 @@ router.post('/teacher/login', async (req, res) => {
         email: teacher.email,
         fullName: teacher.fullName,
         role: 'teacher',
-        instituteId: teacher.instituteId,
-        instituteName: teacher.instituteName
+        instituteId: resolvedInstId,
+        instituteName: resolvedInstName
       }
     });
   } catch (error) {

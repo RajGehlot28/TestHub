@@ -8,6 +8,7 @@ const Teacher = require('../models/Teacher');
 const { memoryStore, generateId } = require('../config/memoryStore');
 const { verifyToken, requireRole } = require('../middleware/auth');
 const { validateInstituteAccess } = require('../middleware/instituteAccess');
+const redisStore = require('../config/redis');
 
 // --- PUBLIC: FETCH BASIC TEST INFO (For shareable link preview) ---
 router.get('/:testCode', async (req, res) => {
@@ -123,10 +124,12 @@ router.get('/:testCode/verify', verifyToken, requireRole('student'), validateIns
   }
 });
 
-// --- PROTECTED STUDENT ROUTE: START TEST & FETCH QUESTIONS (Sanitized) ---
+// --- PROTECTED STUDENT ROUTE: START TEST & FETCH QUESTIONS (Sanitized & Redis Cached) ---
 router.post('/:testCode/start', verifyToken, requireRole('student'), validateInstituteAccess, async (req, res) => {
+  const tStart = performance.now();
   try {
     const test = req.testData;
+    const student = req.studentData;
     const now = new Date();
     const startTime = new Date(test.startTime);
     const endTime = new Date(test.endTime);
@@ -138,18 +141,34 @@ router.post('/:testCode/start', verifyToken, requireRole('student'), validateIns
       return res.status(400).json({ message: 'Test window has expired. Submissions are no longer accepted.' });
     }
 
-    // Sanitize questions (strip correctAnswer before serving to client)
-    const sanitizedQuestions = test.questions.map(q => ({
-      questionId: q.questionId,
-      questionNumber: q.questionNumber,
-      questionText: q.questionText,
-      options: q.options,
-      marks: q.marks || 1
-    }));
+    const redisQuestionKey = `test:${test.testCode}:questions`;
+    let sanitizedQuestions = await redisStore.get(redisQuestionKey);
+    let cacheStatus = 'HIT';
+
+    if (!sanitizedQuestions) {
+      cacheStatus = 'MISS (DB -> Redis Cache populated)';
+      // Sanitize questions (strip correctAnswer before serving to client)
+      sanitizedQuestions = test.questions.map(q => ({
+        questionId: q.questionId,
+        questionNumber: q.questionNumber,
+        questionText: q.questionText,
+        options: q.options,
+        marks: q.marks || 1
+      }));
+      // Cache in Redis for 1 hour
+      await redisStore.set(redisQuestionKey, sanitizedQuestions, 3600);
+    }
+
+    // Initialize active student session in Redis
+    const sessionKey = `active_session:${student._id}:${test._id}`;
+    await redisStore.hset(sessionKey, 'startedAt', now.toISOString());
+    await redisStore.hset(sessionKey, 'studentId', student._id.toString());
+    await redisStore.hset(sessionKey, 'status', 'in_progress');
 
     res.json({
       message: 'Test session started',
       serverTime: now,
+      redisActive: true,
       test: {
         _id: test._id,
         testCode: test.testCode,
@@ -168,16 +187,53 @@ router.post('/:testCode/start', verifyToken, requireRole('student'), validateIns
   }
 });
 
-// --- PROTECTED STUDENT ROUTE: SUBMIT TEST ---
-router.post('/:testCode/submit', verifyToken, requireRole('student'), validateInstituteAccess, async (req, res) => {
+// --- PROTECTED STUDENT ROUTE: LIVE OPTION CLICK / DRAFT AUTO-SAVE TO REDIS ---
+router.put('/:testCode/draft', verifyToken, requireRole('student'), validateInstituteAccess, async (req, res) => {
+  const tStart = performance.now();
   try {
     const test = req.testData;
     const student = req.studentData;
-    const { answers, startedAt, timeTaken } = req.body; // answers = { [questionId]: 'A' | 'B' | 'C' | 'D' }
+    const { questionId, selectedOption, answers } = req.body;
 
-    if (!answers || typeof answers !== 'object') {
-      return res.status(400).json({ message: 'Invalid test submission payload' });
+    const sessionKey = `active_session:${student._id}:${test._id}`;
+
+    if (answers && typeof answers === 'object') {
+      await redisStore.hset(sessionKey, 'answers', answers);
+    } else if (questionId && selectedOption) {
+      const existing = await redisStore.hgetall(sessionKey);
+      const currentAnswers = existing.answers || {};
+      currentAnswers[questionId] = selectedOption;
+      await redisStore.hset(sessionKey, 'answers', currentAnswers);
     }
+
+    const durationMs = (performance.now() - tStart).toFixed(2);
+    const storageType = redisStore.isRealRedis() ? 'redis' : 'database';
+    console.log(`Time for student option selection saving in ${storageType} : ${durationMs} ms`);
+
+    res.json({ status: 'success', savedInRedis: true });
+  } catch (error) {
+    res.status(500).json({ message: 'Error saving draft' });
+  }
+});
+
+// --- PROTECTED STUDENT ROUTE: SUBMIT TEST (GRADES FROM SESSION) ---
+router.post('/:testCode/submit', verifyToken, requireRole('student'), validateInstituteAccess, async (req, res) => {
+  const tStart = performance.now();
+  try {
+    const test = req.testData;
+    const student = req.studentData;
+    const sessionKey = `active_session:${student._id}:${test._id}`;
+
+    // Read draft choices directly from Redis in-memory session
+    const redisSession = await redisStore.hgetall(sessionKey);
+    let studentAnswers = req.body.answers || {};
+
+    if (redisSession && redisSession.answers && typeof redisSession.answers === 'object') {
+      studentAnswers = { ...redisSession.answers, ...studentAnswers };
+    }
+
+    const startedAt = req.body.startedAt || (redisSession && redisSession.startedAt) || new Date(Date.now() - 600000);
+    const timeTaken = req.body.timeTaken || 0;
 
     // Grade student answers against original correct key in test
     let totalMarksObtained = 0;
@@ -185,7 +241,7 @@ router.post('/:testCode/submit', verifyToken, requireRole('student'), validateIn
     const gradedAnswers = [];
 
     test.questions.forEach(q => {
-      const studentAns = answers[q.questionId] || null;
+      const studentAns = studentAnswers[q.questionId] || null;
       const isCorrect = studentAns === q.correctAnswer;
       const marksObtained = isCorrect ? (q.marks || 1) : 0;
       if (isCorrect) {
@@ -214,7 +270,7 @@ router.post('/:testCode/submit', verifyToken, requireRole('student'), validateIn
       totalMarksObtained,
       maxMarks,
       percentage,
-      startedAt: startedAt ? new Date(startedAt) : new Date(Date.now() - 600000),
+      startedAt: new Date(startedAt),
       submittedAt: new Date(),
       timeTaken: Number(timeTaken) || 0,
       status: 'submitted',
@@ -232,6 +288,13 @@ router.post('/:testCode/submit', verifyToken, requireRole('student'), validateIn
         student.totalTestsTaken = (student.totalTestsTaken || 0) + 1;
       }
     }
+
+    // Clean up Redis session key after successful submit
+    await redisStore.del(sessionKey);
+
+    const durationMs = (performance.now() - tStart).toFixed(2);
+    const storageType = redisStore.isRealRedis() ? 'redis' : 'database';
+    console.log(`Time for test submission and grading completed in ${storageType}: ${durationMs} ms`);
 
     res.status(201).json({
       message: 'Test submitted and graded successfully!',
