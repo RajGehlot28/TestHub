@@ -47,7 +47,7 @@ router.post('/generate-mcqs', verifyToken, requireRole('teacher'), upload.array(
       questions: mcqs,
       totalQuestions: mcqs.length
     });
-  } catch (error) {
+  } catch (error) { // error handling
     console.error('MCQ Generation Endpoint Error:', error);
     res.status(500).json({ message: 'Error generating MCQs from PDF', error: error.message });
   }
