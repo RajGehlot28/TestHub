@@ -4,12 +4,21 @@ const AuthContext = createContext(undefined);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
-    const savedUser = localStorage.getItem('testhub_user');
-    return savedUser ? JSON.parse(savedUser) : null;
+    try {
+      const savedUser = localStorage.getItem('testhub_user');
+      return savedUser ? JSON.parse(savedUser) : null;
+    } catch (e) {
+      console.error('Error reading testhub_user from localStorage:', e);
+      return null;
+    }
   });
 
   const [token, setToken] = useState(() => {
-    return localStorage.getItem('testhub_token');
+    try {
+      return localStorage.getItem('testhub_token');
+    } catch (e) {
+      return null;
+    }
   });
 
   const login = (newToken, newUser) => {
@@ -17,6 +26,15 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem('testhub_user', JSON.stringify(newUser));
     setToken(newToken);
     setUser(newUser);
+  };
+
+  const updateUser = (updatedFields) => {
+    setUser(prev => {
+      if (!prev) return prev;
+      const newObj = { ...prev, ...updatedFields };
+      localStorage.setItem('testhub_user', JSON.stringify(newObj));
+      return newObj;
+    });
   };
 
   const logout = () => {
@@ -27,7 +45,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, isAuthenticated: !!token }}>
+    <AuthContext.Provider value={{ user, token, login, logout, updateUser, isAuthenticated: !!token }}>
       {children}
     </AuthContext.Provider>
   );

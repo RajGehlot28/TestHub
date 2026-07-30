@@ -1,16 +1,17 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import api from '../services/api.js';
 import { QRCodeSVG } from 'qrcode.react';
 import {
-  UploadCloud, BrainCircuit, CheckCircle2, Copy, Check, Clock,
+  UploadCloud, BrainCircuit, CheckCircle2, Copy, Check, Clock, PlusCircle,
   Building2, ArrowRight, ArrowLeft, FileText, AlertCircle, Sparkles, Share2
 } from 'lucide-react';
 
 export const CreateTestWizard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [step, setStep] = useState(1);
 
@@ -36,6 +37,30 @@ export const CreateTestWizard = () => {
   const [createdTestCode, setCreatedTestCode] = useState(null);
   const [copied, setCopied] = useState(false);
 
+  const resetWizard = () => {
+    setStep(1);
+    setTestName('');
+    setQuestionCount(5);
+    setMarksPerQuestion(1);
+    setDuration(15);
+    setTestDate(new Date().toISOString().split('T')[0]);
+    setStartTimeStr('08:00');
+    setEndTimeStr('12:00');
+    setSelectedFiles([]);
+    setIsGenerating(false);
+    setError('');
+    setGeneratedQuestions([]);
+    setPdfSourceNames([]);
+    setCreatedTestCode(null);
+    setCopied(false);
+  };
+
+  useEffect(() => {
+    if (location.state?.reset) {
+      resetWizard();
+    }
+  }, [location.state]);
+
   const handleFileChange = (e) => {
     if (e.target.files) {
       const filesArr = Array.from(e.target.files);
@@ -51,13 +76,40 @@ export const CreateTestWizard = () => {
       return setError('Please enter a descriptive test title.');
     }
 
+    if (questionCount === '' || questionCount === null || questionCount === undefined) {
+      return setError('Number of MCQs cannot be empty.');
+    }
+    const parsedQC = Number(questionCount);
+    if (isNaN(parsedQC) || parsedQC <= 0) {
+      return setError('Number of MCQs cannot be zero or negative.');
+    }
+    if (parsedQC > 50) {
+      return setError('Number of MCQs cannot exceed 50.');
+    }
+
+    if (marksPerQuestion === '' || marksPerQuestion === null || marksPerQuestion === undefined) {
+      return setError('Marks per question cannot be empty.');
+    }
+    const parsedMarks = Number(marksPerQuestion);
+    if (isNaN(parsedMarks) || parsedMarks <= 0) {
+      return setError('Marks per question cannot be zero or negative.');
+    }
+
+    if (duration === '' || duration === null || duration === undefined) {
+      return setError('Test duration cannot be empty.');
+    }
+    const parsedDuration = Number(duration);
+    if (isNaN(parsedDuration) || parsedDuration < 5) {
+      return setError('Minimum test duration is 5 minutes.');
+    }
+
     // Validate Time Window
     const startDateTime = new Date(`${testDate}T${startTimeStr}:00`);
     const endDateTime = new Date(`${testDate}T${endTimeStr}:00`);
     const windowMinutes = (endDateTime.getTime() - startDateTime.getTime()) / (1000 * 60);
 
-    if (windowMinutes < duration) {
-      return setError(`Schedule constraint failed: The allowed time window (${windowMinutes} mins) must be at least as long as the test duration (${duration} mins).`);
+    if (windowMinutes < parsedDuration) {
+      return setError(`Schedule constraint failed: The allowed time window (${windowMinutes} mins) must be at least as long as the test duration (${parsedDuration} mins).`);
     }
 
     setIsGenerating(true);
@@ -71,8 +123,8 @@ export const CreateTestWizard = () => {
         formData.append('sampleText', `Sample assessment materials for ${testName}. Topics cover key curriculum concepts, definitions, and problem-solving methodologies.`);
       }
 
-      formData.append('questionCount', questionCount.toString());
-      formData.append('marksPerQuestion', marksPerQuestion.toString());
+      formData.append('questionCount', parsedQC.toString());
+      formData.append('marksPerQuestion', parsedMarks.toString());
 
       const res = await api.post('/ai/generate-mcqs', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
@@ -210,8 +262,9 @@ export const CreateTestWizard = () => {
                   type="number"
                   min={1}
                   max={50}
+                  placeholder="e.g. 5"
                   value={questionCount}
-                  onChange={(e) => setQuestionCount(Number(e.target.value))}
+                  onChange={(e) => setQuestionCount(e.target.value)}
                   className="w-full px-4 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-sm focus:outline-none focus:border-indigo-600"
                 />
               </div>
@@ -221,8 +274,9 @@ export const CreateTestWizard = () => {
                 <input
                   type="number"
                   min={1}
+                  placeholder="e.g. 1"
                   value={marksPerQuestion}
-                  onChange={(e) => setMarksPerQuestion(Number(e.target.value))}
+                  onChange={(e) => setMarksPerQuestion(e.target.value)}
                   className="w-full px-4 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-sm focus:outline-none focus:border-indigo-600"
                 />
               </div>
@@ -234,6 +288,7 @@ export const CreateTestWizard = () => {
                   onChange={(e) => setDuration(Number(e.target.value))}
                   className="w-full px-4 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-sm focus:outline-none focus:border-indigo-600"
                 >
+                  <option value={5}>5 Minutes</option>
                   <option value={10}>10 Minutes</option>
                   <option value={15}>15 Minutes</option>
                   <option value={20}>20 Minutes</option>
@@ -425,7 +480,14 @@ export const CreateTestWizard = () => {
             <QRCodeSVG value={`${window.location.origin}/test/${createdTestCode}`} size={160} />
           </div>
 
-          <div>
+          <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+            <button
+              onClick={resetWizard}
+              className="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs transition-colors flex items-center gap-1.5 shadow-sm"
+            >
+              <PlusCircle className="w-4 h-4" />
+              <span>Create Another Test</span>
+            </button>
             <button
               onClick={() => navigate('/teacher/dashboard')}
               className="px-6 py-2.5 rounded-xl bg-slate-100 text-slate-800 font-semibold text-xs hover:bg-slate-200 transition-colors"

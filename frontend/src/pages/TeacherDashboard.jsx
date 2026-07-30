@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext.jsx';
 import api from '../services/api.js';
 import {
   BookOpen, PlusCircle, Building2, Users, TrendingUp,
@@ -10,6 +11,7 @@ import {
 } from 'recharts';
 
 export const TeacherDashboard = () => {
+  const { updateUser } = useAuth();
   const [teacher, setTeacher] = useState(null);
   const [stats, setStats] = useState({ totalTestsCreated: 0, totalStudentsEvaluated: 0, overallAverage: 0 });
   const [trends, setTrends] = useState([]);
@@ -27,6 +29,12 @@ export const TeacherDashboard = () => {
     try {
       const res = await api.get('/teacher/dashboard');
       setTeacher(res.data.teacher);
+      if (res.data.teacher && res.data.teacher.instituteName) {
+        updateUser({
+          instituteName: res.data.teacher.instituteName,
+          instituteId: res.data.teacher.instituteId
+        });
+      }
       setStats(res.data.stats);
       setTrends(res.data.performanceTrends || []);
       setRecentTests(res.data.recentTests || []);

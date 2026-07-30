@@ -10,7 +10,7 @@ import {
 } from 'recharts';
 
 export const StudentDashboard = () => {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const navigate = useNavigate();
 
   const [student, setStudent] = useState(null);
@@ -30,6 +30,12 @@ export const StudentDashboard = () => {
     try {
       const res = await api.get('/student/dashboard');
       setStudent(res.data.student);
+      if (res.data.student && res.data.student.instituteName) {
+        updateUser({
+          instituteName: res.data.student.instituteName,
+          instituteId: res.data.student.instituteId
+        });
+      }
       setStats(res.data.stats);
       setTrends(res.data.performanceTrends || []);
       setRecentResults(res.data.recentResults || []);

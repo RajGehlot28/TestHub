@@ -6,10 +6,10 @@ import { useAuth } from '../context/AuthContext.jsx';
 export const GuestRoute = ({ children }) => {
   const { user, isAuthenticated } = useAuth();
 
-  if (isAuthenticated && user) {
+  if (isAuthenticated && user && user.role) {
+    if (user.role === 'admin') return <Navigate to="/admin/dashboard" replace />;
     if (user.role === 'teacher') return <Navigate to="/teacher/dashboard" replace />;
-    return <Navigate to="/student/dashboard" replace />;
-
+    if (user.role === 'student') return <Navigate to="/student/dashboard" replace />;
   }
 
   return <>{children}</>;

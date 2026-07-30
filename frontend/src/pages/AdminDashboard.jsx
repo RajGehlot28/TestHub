@@ -16,7 +16,7 @@ export const AdminDashboard = () => {
   const [teacherEmail, setTeacherEmail] = useState('');
   const [teacherPassword, setTeacherPassword] = useState('');
   const [teacherName, setTeacherName] = useState('');
-  const [teacherInstId, setTeacherInstId] = useState('');
+  const [teacherInstName, setTeacherInstName] = useState('');
 
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
@@ -44,11 +44,15 @@ export const AdminDashboard = () => {
     setMessage('');
 
     try {
+      // Find if typed name matches an existing institute ID
+      const matchedInst = institutes.find(i => i.instituteName.toLowerCase() === teacherInstName.trim().toLowerCase());
+
       await api.post('/admin/teachers', {
         email: teacherEmail,
         password: teacherPassword,
         fullName: teacherName,
-        instituteId: teacherInstId || null
+        instituteId: matchedInst ? matchedInst._id : null,
+        instituteName: teacherInstName.trim() || null
       });
 
       setMessage('Teacher account created successfully!');
@@ -56,7 +60,7 @@ export const AdminDashboard = () => {
       setTeacherEmail('');
       setTeacherName('');
       setTeacherPassword('');
-      setTeacherInstId('');
+      setTeacherInstName('');
       fetchAdminData();
     } catch (err) {
       setError(err.response?.data?.message || 'Error creating teacher account');
@@ -251,16 +255,20 @@ export const AdminDashboard = () => {
             </div>
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">Institute Assignment (Optional)</label>
-              <select
-                value={teacherInstId}
-                onChange={(e) => setTeacherInstId(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-indigo-600 transition-colors"
-              >
-                <option value="">No Institute / Independent Teacher</option>
+              <input
+                type="text"
+                list="institutes-datalist"
+                value={teacherInstName}
+                onChange={(e) => setTeacherInstName(e.target.value)}
+                placeholder="Type name or select from list..."
+                className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs placeholder-slate-400 focus:outline-none focus:border-indigo-600 transition-colors"
+              />
+              <datalist id="institutes-datalist">
                 {institutes.map((i) => (
-                  <option key={i._id} value={i._id}>{i.instituteName}</option>
+                  <option key={i._id} value={i.instituteName} />
                 ))}
-              </select>
+              </datalist>
+              <p className="text-[10px] text-slate-500 mt-1">Select from dropdown or type a custom institute name.</p>
             </div>
             <div className="flex justify-end gap-2 pt-2">
               <button

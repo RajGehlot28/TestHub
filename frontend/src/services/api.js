@@ -21,4 +21,19 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+// Response interceptor: auto-clean stale auth tokens on 401/403
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+      const isAuthEndpoint = error.config?.url?.includes('/auth/login');
+      if (!isAuthEndpoint) {
+        localStorage.removeItem('testhub_token');
+        localStorage.removeItem('testhub_user');
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 export default api;

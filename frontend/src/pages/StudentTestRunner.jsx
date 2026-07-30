@@ -32,11 +32,61 @@ export const StudentTestRunner = () => {
   const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Proctoring 3-Strike Warning State
+  const [warningCount, setWarningCount] = useState(0);
+  const [showWarningModal, setShowWarningModal] = useState(false);
+  const [latestViolationReason, setLatestViolationReason] = useState('');
+
   useEffect(() => {
     if (testCode) {
       verifySession();
     }
   }, [testCode]);
+
+  const registerViolation = (reason) => {
+    if (isSubmitting || !isTestStarted) return;
+
+    setWarningCount(prev => {
+      const nextCount = prev + 1;
+      if (nextCount >= 3) {
+        // Strike 3: Terminate & Submit immediately with current choices
+        alert(`🔴 PROCTORING TERMINATION: Maximum warning limit reached (${nextCount}/3) due to: ${reason}.\nYour assessment is being automatically submitted now.`);
+        handleSubmitTest();
+        return nextCount;
+      } else {
+        // Strike 1 or 2: Display Warning Modal
+        setLatestViolationReason(reason);
+        setShowWarningModal(true);
+        return nextCount;
+      }
+    });
+  };
+
+  useEffect(() => {
+    if (!isTestStarted || isSubmitting) return;
+
+    const handleFullscreenExit = () => {
+      if (!document.fullscreenElement) {
+        registerViolation('Exiting Fullscreen Mode / Pressing Esc');
+      }
+    };
+
+    const handleVisibilityOrBlur = () => {
+      if (document.hidden || !document.hasFocus()) {
+        registerViolation('Switching tabs, pressing Windows/Alt+Tab key, or losing window focus');
+      }
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenExit);
+    document.addEventListener('visibilitychange', handleVisibilityOrBlur);
+    window.addEventListener('blur', handleVisibilityOrBlur);
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenExit);
+      document.removeEventListener('visibilitychange', handleVisibilityOrBlur);
+      window.removeEventListener('blur', handleVisibilityOrBlur);
+    };
+  }, [isTestStarted, isSubmitting]);
 
   const verifySession = async () => {
     setAccessState('loading');
@@ -71,16 +121,30 @@ export const StudentTestRunner = () => {
       setTestInfo(res.data.test);
       setStartedAtTime(new Date());
       setIsTestStarted(true);
+
+      // Enter Fullscreen Lock
+      if (document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      }
     } catch (err) {
       alert(err.response?.data?.message || 'Unable to start test session.');
     }
   };
 
+  const handleResumeFromWarning = () => {
+    setShowWarningModal(false);
+    if (document.documentElement.requestFullscreen && !document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(() => {});
+    }
+  };
+
   const handleOptionSelect = (questionId, optionId) => {
-    setStudentAnswers(prev => ({
-      ...prev,
-      [questionId]: optionId
-    }));
+    setStudentAnswers(prev => {
+      const updated = { ...prev, [questionId]: optionId };
+      // Save choice to Redis temporary session
+      api.put(`/tests/${testCode}/draft`, { questionId, selectedOption: optionId, answers: updated }).catch(() => {});
+      return updated;
+    });
   };
 
   const handleSubmitTest = async () => {
@@ -97,6 +161,11 @@ export const StudentTestRunner = () => {
         startedAt: startTime.toISOString(),
         timeTaken: timeTakenSeconds
       });
+
+      // Exit fullscreen on submit
+      if (document.fullscreenElement && document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {});
+      }
 
       // Redirect immediately to result breakdown
       navigate(`/student/results/${res.data.resultId}`);
@@ -199,6 +268,23 @@ export const StudentTestRunner = () => {
             </div>
           )}
 
+          {/* Beginner-style Exam Proctoring NOTE Box */}
+          <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs space-y-1.5 shadow-sm">
+            <div className="font-extrabold flex items-center gap-1.5 text-amber-800">
+              <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+              <span>📝 NOTE FOR STUDENTS (IMPORTANT EXAM RULES):</span>
+            </div>
+            <p className="leading-relaxed">
+              1. Please do <strong>NOT</strong> press the <strong>Windows key</strong>, <strong>Alt+Tab</strong>, or <strong>Esc key</strong> during the test.
+            </p>
+            <p className="leading-relaxed">
+              2. You are allowed a maximum of <strong>2 warnings</strong> for shortcut keys or tab switching.
+            </p>
+            <p className="leading-relaxed text-rose-800 font-semibold">
+              3. On the 3rd key press or tab switch, your test will end automatically and submit your selected answers.
+            </p>
+          </div>
+
           {/* Start Test Button */}
           <button
             onClick={handleStartTestSession}
@@ -220,6 +306,20 @@ export const StudentTestRunner = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
+      {/* Strict Proctoring Header Banner */}
+      <div className="bg-amber-50 border border-amber-200 p-3 rounded-2xl flex flex-wrap items-center justify-between gap-3 text-xs text-amber-900 font-semibold shadow-sm">
+        <div className="flex items-center gap-2">
+          <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+          <span>📝 <strong>NOTE:</strong> Do NOT press the Windows key, Alt+Tab, or Esc key during the test. On the 3rd key press or tab switch, your test will end automatically.</span>
+        </div>
+        <div className="flex items-center gap-1.5 shrink-0 bg-white px-3 py-1 rounded-xl border border-amber-300 shadow-sm text-xs">
+          <span className="text-slate-600 font-medium">Warnings Used:</span>
+          <span className={`font-extrabold ${warningCount === 0 ? 'text-emerald-600' : warningCount === 1 ? 'text-amber-600' : 'text-rose-600'}`}>
+            {warningCount} / 2 Allowed
+          </span>
+        </div>
+      </div>
+
       {/* Top Runner Header */}
       <div className="bg-white px-6 py-4 rounded-2xl border border-slate-200 flex items-center justify-between gap-4 sticky top-18 z-30 shadow-sm">
         <div>
@@ -389,6 +489,30 @@ export const StudentTestRunner = () => {
                 {isSubmitting ? 'Grading...' : 'Yes, Submit Now'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* 3-Strike Warning Modal */}
+      {showWarningModal && (
+        <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-md flex items-center justify-center p-4 z-50">
+          <div className="max-w-md w-full bg-white p-6 rounded-2xl border border-rose-200 shadow-2xl space-y-4 text-center">
+            <div className="w-14 h-14 rounded-full bg-rose-50 border border-rose-200 text-rose-600 flex items-center justify-center mx-auto">
+              <AlertCircle className="w-8 h-8" />
+            </div>
+            <h2 className="text-xl font-extrabold text-slate-900">Proctoring Warning ({warningCount}/2 Used)</h2>
+            <p className="text-xs text-slate-600">
+              <strong className="text-rose-600">Violation Detected:</strong> {latestViolationReason}
+            </p>
+            <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-800 font-semibold">
+              ⚠️ Warning: You have {3 - warningCount} attempt(s) remaining. On the 3rd violation, your test will be automatically terminated and submitted with your current selected choices.
+            </div>
+            <button
+              onClick={handleResumeFromWarning}
+              className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md transition-all"
+            >
+              Re-enter Fullscreen & Continue Test
+            </button>
           </div>
         </div>
       )}

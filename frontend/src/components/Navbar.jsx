@@ -13,6 +13,15 @@ export const Navbar = () => {
     navigate('/login-student');
   };
 
+  const handleCreateTestClick = (e) => {
+    e.preventDefault();
+    if (window.location.pathname === '/teacher/create-test') {
+      navigate('/teacher/create-test', { state: { reset: Date.now() }, replace: true });
+    } else {
+      navigate('/teacher/create-test');
+    }
+  };
+
   return (
     <nav className="border-b border-slate-200 bg-white sticky top-0 z-40 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -42,13 +51,13 @@ export const Navbar = () => {
               {/* Role Specific Actions */}
               {user.role === 'teacher' && (
                 <>
-                  <Link
-                    to="/teacher/create-test"
+                  <button
+                    onClick={handleCreateTestClick}
                     className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
                   >
                     <PlusCircle className="w-4 h-4" />
                     Create Test
-                  </Link>
+                  </button>
                 </>
               )}
 
@@ -64,11 +73,11 @@ export const Navbar = () => {
               {/* User Profile */}
               <div className="flex items-center gap-3 pl-2 border-l border-slate-200">
                 <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 border border-indigo-200 flex items-center justify-center font-bold text-xs">
-                  {(user.name || user.fullName || user.email)[0].toUpperCase()}
+                  {(user?.name || user?.fullName || user?.email || 'U')[0].toUpperCase()}
                 </div>
                 <div className="hidden sm:block text-left">
-                  <div className="text-xs font-bold text-slate-900">{user.name || user.fullName}</div>
-                  <div className="text-[10px] text-slate-500 capitalize font-medium">{user.role}</div>
+                  <div className="text-xs font-bold text-slate-900">{user?.name || user?.fullName || user?.email || 'User'}</div>
+                  <div className="text-[10px] text-slate-500 capitalize font-medium">{user?.role}</div>
                 </div>
                 <button
                   onClick={handleLogout}

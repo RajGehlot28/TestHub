@@ -56,3 +56,10 @@ input[type="password"]::-webkit-credentials-auto-fill-button {
   display: none !important;
   pointer-events: none;
 }
+
+/* Hide browser-native datalist dropdown arrow indicator ONLY for datalist inputs */
+input[list]::-webkit-calendar-picker-indicator {
+  display: none !important;
+  -webkit-appearance: none;
+  opacity: 0;
+}
