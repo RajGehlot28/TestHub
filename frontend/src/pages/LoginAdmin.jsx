@@ -71,7 +71,7 @@ export const LoginAdmin = () => {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="admin@123"
+                placeholder="••••••••"
                 className="w-full pl-4 pr-10 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-sm placeholder-slate-400 focus:outline-none focus:border-amber-600 transition-colors"
               />
               <button

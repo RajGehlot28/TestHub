@@ -96,8 +96,6 @@ export function App() {
                   </ProtectedRoute>
                 }
               />
-
-
             </Routes>
           </main>
         </div>

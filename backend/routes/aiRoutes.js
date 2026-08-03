@@ -4,7 +4,7 @@ const multer = require('multer');
 const { parsePDFText, generateMCQsFromText } = require('../services/aiService');
 const { verifyToken, requireRole } = require('../middleware/auth');
 
-// Configure Multer memory storage (Max 10MB per file)
+// Configure Multer memory storage(Max 10MB per file)
 const storage = multer.memoryStorage();
 const upload = multer({
   storage,
